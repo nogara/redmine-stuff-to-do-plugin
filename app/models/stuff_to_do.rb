@@ -192,17 +192,24 @@ class StuffToDo < ActiveRecord::Base
   end
 
   def self.conditions_for_available(filter_by)
-    conditions_builder = ARCondition.new(["#{IssueStatus.table_name}.is_closed = ?", false ])
-    conditions_builder.add(["#{Project.table_name}.status = ?", Project::STATUS_ACTIVE])
+    conditions = ""
+    parameters = []
 
-    case 
+    conditions << "#{IssueStatus.table_name}.is_closed = ?"
+    parameters << false
+    conditions << " AND #{Project.table_name}.status = ?"
+    parameters << Project::STATUS_ACTIVE
+
+    case
     when filter_by.is_a?(User)
-      conditions_builder.add(["assigned_to_id = ?", filter_by.id])
+      conditions << " AND assigned_to_id = ?"
+      parameters << filter_by.id
     when filter_by.is_a?(IssueStatus), filter_by.is_a?(Enumeration)
       table_name = filter_by.class.table_name
-      conditions_builder.add(["#{table_name}.id = (?)", filter_by.id])
+      conditions << " AND #{table_name}.id = (?)"
+      parameters << filter_by.id
     end
 
-    conditions_builder.conditions
+    [conditions, parameters].flatten
   end
 end
